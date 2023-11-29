@@ -45,38 +45,38 @@ def logout():
 # -------- Signup ---------------------------------------------------------- #
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if not session.get('logged_in'):
-        form = forms.LoginForm(request.form)
-        if request.method == 'POST':
-            username = request.form['username'].lower()
-            password = helpers.hash_password(request.form['password'])
-            email = request.form['email']
-            if form.validate():
-                if not helpers.username_taken(username):
-                    helpers.add_user(username, password, email)
-                    session['logged_in'] = True
-                    session['username'] = username
-                    return json.dumps({'status': 'Signup successful'})
-                return json.dumps({'status': 'Username taken'})
-            return json.dumps({'status': 'User/Pass required'})
-        return render_template('login.html', form=form)
-    return redirect(url_for('login'))
+    if session.get('logged_in'):
+        return redirect(url_for('login'))
+    form = forms.LoginForm(request.form)
+    if request.method == 'POST':
+        username = request.form['username'].lower()
+        password = helpers.hash_password(request.form['password'])
+        email = request.form['email']
+        if form.validate():
+            if not helpers.username_taken(username):
+                helpers.add_user(username, password, email)
+                session['logged_in'] = True
+                session['username'] = username
+                return json.dumps({'status': 'Signup successful'})
+            return json.dumps({'status': 'Username taken'})
+        return json.dumps({'status': 'User/Pass required'})
+    return render_template('login.html', form=form)
 
 
 # -------- Settings ---------------------------------------------------------- #
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    if session.get('logged_in'):
-        if request.method == 'POST':
-            password = request.form['password']
-            if password != "":
-                password = helpers.hash_password(password)
-            email = request.form['email']
-            helpers.change_user(password=password, email=email)
-            return json.dumps({'status': 'Saved'})
-        user = helpers.get_user()
-        return render_template('settings.html', user=user)
-    return redirect(url_for('login'))
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        password = request.form['password']
+        if password != "":
+            password = helpers.hash_password(password)
+        email = request.form['email']
+        helpers.change_user(password=password, email=email)
+        return json.dumps({'status': 'Saved'})
+    user = helpers.get_user()
+    return render_template('settings.html', user=user)
 
 
 # ======== Main ============================================================== #
